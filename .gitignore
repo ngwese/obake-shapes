@@ -11,3 +11,11 @@
 *.tgz
 
 shapes/*/dist/
+
+# os image build artifacts
+/.build/
+/dist/
+
+# verification harness artifacts
+verification/qemu/*.log
+verification/qemu/install-work/
