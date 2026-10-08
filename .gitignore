@@ -10,4 +10,4 @@
 
 *.tgz
 
-shapes/*/dist/
+*/dist/
