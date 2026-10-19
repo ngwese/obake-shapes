@@ -1,0 +1,19 @@
+Bootstrap: docker
+From: alpine:edge
+
+%environment
+	export LC_ALL=C
+
+%post
+	# community is enabled on alpine:edge; pipewire-tools pulls runtime libs
+	# (libpipewire, ncurses, readline, sndfile). No daemon is started.
+	# App version is pinned via {{ pipewire_version }} / build-args.txt.
+	apk add --no-cache pipewire-tools
+
+%runscript
+	exec "$@"
+
+%labels
+	com.afofo.obake.shape-schema 0.1
+	com.afofo.obake.shape-name pipewire-tools
+	com.afofo.obake.shape-app-version {{ pipewire_version }}

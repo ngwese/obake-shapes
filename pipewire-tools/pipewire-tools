@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Run the pipewire-tools Singularity image against the host PipeWire socket.
+set -euo pipefail
+
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ -n "${PIPEWIRE_TOOLS_SIF:-}" ]; then
+	sif="$PIPEWIRE_TOOLS_SIF"
+elif [ -f "$here/pipewire-tools.sif" ]; then
+	sif="$here/pipewire-tools.sif"
+elif [ -f "$here/../../../pipewire-tools.sif" ]; then
+	# Built at the repository root per README.
+	sif="$(cd "$here/../../.." && pwd)/pipewire-tools.sif"
+else
+	printf '%s: no image found (set PIPEWIRE_TOOLS_SIF or build pipewire-tools.sif)\n' \
+		"${0##*/}" >&2
+	exit 1
+fi
+if [ ! -f "$sif" ]; then
+	printf '%s: image not found: %s\n' "${0##*/}" "$sif" >&2
+	exit 1
+fi
+
+if command -v singularity >/dev/null 2>&1; then
+	runner=singularity
+elif command -v apptainer >/dev/null 2>&1; then
+	runner=apptainer
+else
+	printf '%s: singularity or apptainer is required\n' "${0##*/}" >&2
+	exit 1
+fi
+
+runtime="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+if [ ! -d "$runtime" ]; then
+	printf '%s: runtime directory %s does not exist\n' "${0##*/}" "$runtime" >&2
+	exit 1
+fi
+
+exec "$runner" run \
+	--bind "$runtime" \
+	--env "XDG_RUNTIME_DIR=$runtime" \
+	"$sif" \
+	"$@"
