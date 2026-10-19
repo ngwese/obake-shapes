@@ -1,12 +1,12 @@
 Bootstrap: docker
-From: debian:bookworm
+From: debian:trixie
 Stage: build
 
 %environment
 	export LC_ALL=C
 
 %post
-    export PIN_CHUCK={{ chuck_version }}
+	export PIN_CHUCK={{ chuck_version }}
 
 	export DEBIAN_FRONTEND=noninteractive
 	export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
@@ -14,7 +14,7 @@ Stage: build
 	# freshen bits
 	apt-get update && apt-get upgrade -y
 
-	# mod-host dependencies
+	# chuck build dependencies (JACK headers only; no jackd2 server)
 	apt-get install -y \
 		wget \
 		build-essential \
@@ -34,7 +34,7 @@ Stage: build
 	rm -rf chuck-${PIN_CHUCK}
 
 Bootstrap: docker
-From: debian:bookworm-slim
+From: debian:trixie-slim
 Stage: final
 
 %files from build
@@ -44,15 +44,15 @@ Stage: final
 	apt-get update
 	apt-get install -y -q \
 		libsndfile1 \
-		libasound2 \
-		libjack-jackd2-0
+		libasound2t64 \
+		pipewire-jack
 	rm -rf /var/lib/apt/lists/*
 
 
 %runscript
-	/usr/local/bin/chuck $*
+	pw-jack /usr/local/bin/chuck $*
 
 %labels
-    com.afofo.obake.shape-schema 0.1
-    com.afofo.obake.shape-name chuck
-    com.afofo.obake.shape-app-version {{ chuck_version }}
+	com.afofo.obake.shape-schema 0.1
+	com.afofo.obake.shape-name chuck
+	com.afofo.obake.shape-app-version {{ chuck_version }}

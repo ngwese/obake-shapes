@@ -1,12 +1,12 @@
 Bootstrap: docker
-From: debian:bookworm
+From: debian:trixie
 Stage: build
 
 %environment
 	export LC_ALL=C
 
 %files
-	rnbo-src-1.4.4.tgz
+	rnbo-src-1.4.5.tgz
 	conan-x86_64-default
 
 %post
@@ -36,18 +36,19 @@ Stage: build
 		libsndfile1-dev
 
 	# setup conan
-	pip3 install --break-system-packages conan==1.61.0
+	# 1.61.0 imports removed `imp` on Trixie's Python 3.13; 1.62+ works.
+	pip3 install --break-system-packages conan==1.62.0
 	mkdir -pv /root/.conan/profiles
 	mv /conan-x86_64-default /root/.conan/profiles/default
 
 	# rnbo source
 	mkdir -pv /usr/local/src/
-	tar zxvf /rnbo-src-1.4.4.tgz -C /usr/local/src/
+	tar zxvf /rnbo-src-1.4.5.tgz -C /usr/local/src/
 
 	# runner build
-	wget https://github.com/Cycling74/rnbo.oscquery.runner/archive/refs/tags/v1.4.4-8.tar.gz
-	tar zxvf v1.4.4-8.tar.gz
-	cd rnbo.oscquery.runner-1.4.4-8/
+	wget https://github.com/Cycling74/rnbo.oscquery.runner/archive/refs/tags/v1.4.5-9.tar.gz
+	tar zxvf v1.4.5-9.tar.gz
+	cd rnbo.oscquery.runner-1.4.5-9/
 	mkdir release/
 	cd release/
 	cmake .. -DCMAKE_BUILD_TYPE=Release -DWITH_DBUS=Off -DWITH_JACKSERVER=Off -DRNBO_DIR=/usr/local/src/rnbo
@@ -55,11 +56,11 @@ Stage: build
 	cpack --verbose
 
 Bootstrap: docker
-From: debian:bookworm-slim
+From: debian:trixie-slim
 Stage: final
 
 %files from build
-	/build/rnbo.oscquery.runner-1.4.4-8/release/rnbooscquery_1.4.4-8_amd64.deb /rnbooscquery.deb
+	/build/rnbo.oscquery.runner-1.4.5-9/release/rnbooscquery_1.4.5-9_amd64.deb /rnbooscquery.deb
 
 %post
 	apt-get update
@@ -76,7 +77,8 @@ Stage: final
 		libsndfile1-dev \
 		google-mock \
 		python3-pip \
-		ruby
+		ruby \
+		pipewire-jack
 
 	rm -rf /var/lib/apt/lists/*
 
@@ -84,4 +86,4 @@ Stage: final
 	rm -f /rnbooscquery.deb
 
 %runscript
-	/usr/bin/rnbooscquery $*
+	pw-jack /usr/bin/rnbooscquery $*

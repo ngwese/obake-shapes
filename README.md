@@ -16,5 +16,8 @@ sequencers, MIDI processors, and generative control systems for MIDI and OSC.
 Each shape directory contains the Singularity definition file(s) that build
 its workload.
 
+JACK applications that should use the host PipeWire graph: see
+[docs/pipewire-jack.md](docs/pipewire-jack.md) (Debian Trixie + `pw-jack`).
+
 This repository is consumed as the `shapes/` submodule of the top-level
 `obake` repository.
