@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Run the ptp-tools Singularity image against the host network and PTP devices.
+set -euo pipefail
+
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ -n "${PTP_TOOLS_SIF:-}" ]; then
+	sif="$PTP_TOOLS_SIF"
+elif [ -f "$here/ptp-tools.sif" ]; then
+	sif="$here/ptp-tools.sif"
+elif [ -f "$here/../../../ptp-tools.sif" ]; then
+	# Built at the repository root per README.
+	sif="$(cd "$here/../../.." && pwd)/ptp-tools.sif"
+else
+	printf '%s: no image found (set PTP_TOOLS_SIF or build ptp-tools.sif)\n' \
+		"${0##*/}" >&2
+	exit 1
+fi
+if [ ! -f "$sif" ]; then
+	printf '%s: image not found: %s\n' "${0##*/}" "$sif" >&2
+	exit 1
+fi
+
+if command -v singularity >/dev/null 2>&1; then
+	runner=singularity
+elif command -v apptainer >/dev/null 2>&1; then
+	runner=apptainer
+else
+	printf '%s: singularity or apptainer is required\n' "${0##*/}" >&2
+	exit 1
+fi
+
+# Host network is the Singularity/Apptainer default (do not pass --net).
+# Bind /dev for /dev/ptp* and NIC ioctls; CAP_NET_ADMIN / CAP_SYS_TIME for
+# ethtool HWTS, hwstamp_ctl, ptp4l, and phc2sys.
+exec "$runner" run \
+	--bind /dev \
+	--add-caps CAP_NET_ADMIN,CAP_SYS_TIME \
+	"$sif" \
+	"$@"

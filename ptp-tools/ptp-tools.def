@@ -1,0 +1,31 @@
+Bootstrap: docker
+From: alpine:edge
+
+%environment
+	export LC_ALL=C
+
+%files
+	# Paths are relative to the singularity build working directory
+	# (repository root; see README).
+	shapes/ptp-tools/configs /opt/ptp-tools/configs
+
+%post
+	# linuxptp lives in edge/testing; tag the repo and install only that
+	# package from it. ethtool/tcpdump/iproute2 come from main/community.
+	# App version is pinned via {{ linuxptp_version }} / build-args.txt.
+	# No PTP daemon is started; operators invoke tools via the runscript.
+	echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" \
+		>> /etc/apk/repositories
+	apk add --no-cache \
+		ethtool \
+		linuxptp@testing \
+		tcpdump \
+		iproute2
+
+%runscript
+	exec "$@"
+
+%labels
+	com.afofo.obake.shape-schema 0.1
+	com.afofo.obake.shape-name ptp-tools
+	com.afofo.obake.shape-app-version {{ linuxptp_version }}
